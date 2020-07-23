@@ -3,6 +3,7 @@ from string import ascii_letters, ascii_lowercase
 
 queries = []
 trie_list = {}
+cursor = 0
 
 
 def load():
@@ -36,7 +37,7 @@ def get_info(completions):
 
 
 def find_substrings(query):
-    cursor = trie_list[query[0]]
+    global cursor
     found_queries = []
 
     for letter in query:
@@ -53,35 +54,35 @@ def find_substrings(query):
 
 def print_matches(matches, query):
     for i, match in enumerate(matches):
-        offset = match.offset + len(match.completed_string[:match.offset]) - len(simplify_query(match.completed_string[:match.offset]))
-        print(i + 1,
-              match.completed_string[:offset] +
-              f'\033[91m{match.completed_string[offset: offset + len(query)]}\033[00m' +
-              match.completed_string[offset + len(query):],
-              '(', match.source_text, ')', match.score)
+        print(i+1, match.completed_string,
+              '(', f'\033[94m{match.source_text}\033[00m', ')',
+              f'\033[91m{match.score}\033[00m')
 
 
 def find_top_five(query):
     query = simplify_query(query)
-    print(query)
     substrings = find_substrings(query)
     print_matches(substrings, query)
 
 
 def get_input():
+    global cursor
     string = input("Please enter a search: ")
+    cursor = trie_list[string[0]]
     find_top_five(string[:8])
     while True:
-        if string[-1] == '#':
-            return
         str_ = input(string)
+        if str_[-1] == '#':
+            return
+        if len(string) > 7:
+            print_matches(get_info(cursor['completions']), string)
+        find_top_five(str_[:8 - len(string)])
         string += str_
-        find_top_five(string[:8])
 
 
 def main():
     load()
-    print("Click ctrl c to exit")
+    print("\nClick ctrl c to exit\n")
     while True:
         get_input()
 

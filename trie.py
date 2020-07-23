@@ -4,8 +4,8 @@ from os import walk, path
 
 query_id = 0
 queries = []
-files = {letter: 'trie_' + letter + '.json' for letter in ascii_lowercase + ' '}
-dicts = {letter: [{'completions': [], 'dict': {}}] for letter in ascii_lowercase + ' '}
+files = {letter: 'trie_' + letter + '.json' for letter in ascii_lowercase}
+dicts = {letter: [{'completions': [], 'dict': {}}] for letter in ascii_lowercase}
 
 
 def simplify_query(query):
@@ -14,21 +14,31 @@ def simplify_query(query):
     return query
 
 
+def updated(completion, dic):
+    if dic[0] == completion[0]:
+        if dic[2] > completion[2]:
+            completion[1] = dic[1]
+            completion[2] = dic[2]
+        elif dic[2] == completion[2]:
+            if dic[1] < completion[1]:
+                completion[1] = dic[1]
+        return True
+
+    return False
+
+
 def add_completion(cursor, dic):
     for completion in cursor['completions']:
-        if dic[0] == completion[0]:
-            if dic[2] > completion[2]:
-                completion[1] = dic[1]
-                completion[2] = dic[2]
+        if updated(completion, dic):
             break
 
     else:
         cursor['completions'].append(dic)
-        cursor['completions'] = sorted(cursor['completions'], key=lambda x: x[2], reverse=True)[:5]
+        cursor['completions'] = sorted(cursor['completions'], key=lambda x: (x[2], -x[1]), reverse=True)[:5]
 
 
 def add_query_to_trie(query, _id, offset, minus_score):
-    if not query:
+    if not query or query[0] == ' ':
         return
 
     cursor = dicts[query[0]][0]
